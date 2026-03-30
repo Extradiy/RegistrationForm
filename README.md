@@ -10,6 +10,11 @@ A simple, single-file PHP registration system with MySQL database integration.
 - ✅ Input validation and sanitization
 - ✅ SQL injection protection (prepared statements)
 - ✅ XSS protection
+- ✅ Real-time form validation with visual feedback
+- ✅ Client-side and server-side validation
+- ✅ Password strength requirements with live indicators
+- ✅ Inappropriate username filtering
+- ✅ Form submission prevention until all requirements met
 - ✅ Responsive modern design
 - ✅ User-friendly error messages
 
@@ -61,24 +66,38 @@ This ensures everyone on your team has the exact same database structure.
 
 ### Required Fields
 - **Full Name** - User's complete name
-- **Username** - 3+ characters, letters/numbers/underscores only
-- **Email** - Valid email format
+- **Username** - 3+ characters, must start with a letter, letters/numbers/underscores only, appropriate content required
+- **Email** - Valid email format, must contain @
 - **Phone Number** - Exactly 8 digits (numbers only)
-- **Password** - Minimum 6 characters
+- **Password** - Minimum 7 characters, must include:
+  - At least one capital letter (A-Z)
+  - At least one number (0-9)
+  - At least one special character (!@#$%^&*...  )
 - **Confirm Password** - Must match password
 
 ### Optional Fields
 - None (all fields are required)
 
+### Real-Time Validation
+- ✅ Password requirements shown with live checkmarks
+- ✅ Input fields turn green when valid, red when invalid
+- ✅ Submit button disabled until all requirements met
+- ✅ Instant feedback on every keystroke
+- ✅ Form submission blocked if validation fails
+
 ## Validation Rules
 
-- Username: Minimum 3 characters, alphanumeric and underscores only
-- Email: Must be valid email format
-- Password: Minimum 6 characters
-- Confirm Password: Must match the password field
-- Full Name: Required
-- Phone Number: Required, exactly 8 digits (numbers only)
+- **Full Name**: Minimum 3 characters, letters and spaces only
+- **Username**: Minimum 3 characters, must start with a letter, alphanumeric and underscores only, reserved and inappropriate names blocked
+- **Email**: Must be valid email format and contain @ symbol
+- **Password**: Minimum 7 characters with at least:
+  - One capital letter (A-Z)
+  - One number (0-9)
+  - One special character (!@#$%^&*(),.?":{}|<>)
+- **Confirm Password**: Must match the password field
+- **Phone Number**: Required, exactly 8 digits (numbers only)
 - Duplicate usernames/emails are rejected
+- Real-time validation prevents submission of invalid data
 
 ## Security Features
 
