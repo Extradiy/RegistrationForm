@@ -103,13 +103,17 @@ if ($result) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="style2.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
+    <script src="theme.js" defer></script>
 </head>
 <body>
+    <button id="themeToggle" class="theme-toggle">🌙</button>
 
-    <h1>Dashboard</h1>
+    <div class="content-wrapper">
+        <h1>Dashboard</h1>
 
     <p>Logged in as: <?php echo htmlspecialchars($fullname); ?> (<?php echo htmlspecialchars($username); ?>)</p>
 
@@ -168,5 +172,6 @@ if ($result) {
         <?php endforeach; ?>
     <?php endif; ?>
 
+    </div>
 </body>
 </html>
