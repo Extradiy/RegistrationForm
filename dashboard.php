@@ -1,14 +1,23 @@
 <?php
 session_start();
 
+// Make sure user came from register/login
+if (!isset($_SESSION['user_id'])) {
+    header("Location: register.php");
+    exit;
+}
+
 // Database configuration
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'registration_db');
 
-$fullname = $_SESSION['fullname'] ?? 'Guest User';
-$username = $_SESSION['username'] ?? 'guest';
+$fullname = $_SESSION['fullname'];
+$username = $_SESSION['username'];
+$email = $_SESSION['email'] ?? '';
+$phone = $_SESSION['phone'] ?? '';
+$user_id = $_SESSION['user_id'];
 
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
@@ -31,6 +40,7 @@ $message = "";
 
 // Handle logout
 if (isset($_GET['logout'])) {
+    session_unset();
     session_destroy();
     header("Location: register.php");
     exit;
@@ -98,6 +108,8 @@ if ($result) {
         $posts[] = $row;
     }
 }
+
+$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -112,6 +124,7 @@ if ($result) {
     <h1>Dashboard</h1>
 
     <p>Logged in as: <?php echo htmlspecialchars($fullname); ?> (<?php echo htmlspecialchars($username); ?>)</p>
+    <p>User ID: <?php echo htmlspecialchars((string)$user_id); ?></p>
 
     <p><a href="?logout=true">Logout</a></p>
 
