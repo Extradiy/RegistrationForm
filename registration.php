@@ -1,4 +1,6 @@
 <?php
+session_start();
+
 // Database configuration
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
@@ -114,9 +116,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn) {
             $stmt->bind_param("sssss", $username, $email, $hashed_password, $fullname, $phone);
             
             if ($stmt->execute()) {
-                $success = "Registration successful! User ID: " . $stmt->insert_id;
-                // Clear form fields
-                $username = $email = $fullname = $phone = '';
+                $_SESSION['user_id'] = $stmt->insert_id;
+                $_SESSION['username'] = $username;
+                $_SESSION['fullname'] = $fullname;
+                $_SESSION['email'] = $email;
+                $_SESSION['phone'] = $phone;
+
+                header("Location: dashboard.php");
+                exit;
             } else {
                 $errors[] = "Registration failed. Please try again.";
             }
