@@ -136,6 +136,9 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Registration Form</title>
+<<<<<<< HEAD
+    <script src="theme.js" defer></script>
+=======
     <style>
         .validation-feedback {
             font-size: 12px;
@@ -178,6 +181,7 @@ if ($conn) {
             transform: none !important;
         }
     </style>
+>>>>>>> 7feb3590a7605158a588e725c987739bf05ca6a5
 </head>
 <body>
     <div class="container">
