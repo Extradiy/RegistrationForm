@@ -50,20 +50,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn) {
         $errors[] = "Username is required";
     } elseif (strlen($username) < 3) {
         $errors[] = "Username must be at least 3 characters";
-    } elseif (!preg_match('/^[a-zA-Z0-9_]+$/', $username)) {
-        $errors[] = "Username can only contain letters, numbers, and underscores";
+    } elseif (!preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $username)) {
+        $errors[] = "Username must start with a letter and contain only letters, numbers, and underscores";
+    } elseif (preg_match('/^(admin|root|test|user|demo|null|undefined)$/i', $username)) {
+        $errors[] = "This username is not allowed";
+    } elseif (preg_match('/(fuck|shit|ass|damn|bitch|bastard|crap|piss|dick|cock|pussy|slut|whore|nigger|fag|sex|porn|xxx)/i', $username)) {
+        $errors[] = "Username contains inappropriate content";
     }
     
     if (empty($email)) {
         $errors[] = "Email is required";
+    } elseif (strpos($email, '@') === false) {
+        $errors[] = "Email must contain @ symbol";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = "Invalid email format";
     }
     
     if (empty($password)) {
         $errors[] = "Password is required";
-    } elseif (strlen($password) < 6) {
-        $errors[] = "Password must be at least 6 characters";
+    } elseif (strlen($password) < 7) {
+        $errors[] = "Password must be at least 7 characters";
+    } elseif (!preg_match('/[A-Z]/', $password)) {
+        $errors[] = "Password must contain at least one capital letter";
+    } elseif (!preg_match('/[0-9]/', $password)) {
+        $errors[] = "Password must contain at least one number";
+    } elseif (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
+        $errors[] = "Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>)";
     }
     
     if ($password !== $confirm_password) {
@@ -72,6 +84,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn) {
     
     if (empty($fullname)) {
         $errors[] = "Full name is required";
+    } elseif (strlen($fullname) < 3) {
+        $errors[] = "Full name must be at least 3 characters";
+    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $fullname)) {
+        $errors[] = "Full name can only contain letters and spaces";
     }
     
     if (empty($phone)) {
@@ -120,6 +136,48 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Registration Form</title>
+    <style>
+        .validation-feedback {
+            font-size: 12px;
+            margin-top: 8px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        
+        .requirement {
+            margin: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .requirement:before {
+            content: "✕";
+            position: absolute;
+            left: 0;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .requirement.valid:before {
+            content: "✓";
+            color: #28a745;
+        }
+        
+        input.invalid {
+            border-color: #e74c3c !important;
+        }
+        
+        input.valid {
+            border-color: #28a745 !important;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -155,8 +213,12 @@ if ($conn) {
                     name="fullname" 
                     value="<?php echo htmlspecialchars($fullname ?? ''); ?>" 
                     placeholder="Enter your full name"
+                    minlength="3"
+                    pattern="[a-zA-Z\s]+"
+                    title="Full name must be at least 3 characters and contain only letters and spaces"
                     required
                 >
+                <div class="password-hint">Min 3 characters, letters and spaces only</div>
             </div>
             
             <div class="form-group">
@@ -169,9 +231,12 @@ if ($conn) {
                     name="username" 
                     value="<?php echo htmlspecialchars($username ?? ''); ?>" 
                     placeholder="Choose a username"
+                    minlength="3"
+                    pattern="[a-zA-Z][a-zA-Z0-9_]*"
+                    title="Username must start with a letter"
                     required
                 >
-                <div class="password-hint">Letters, numbers, and underscores only (min 3 characters)</div>
+                <div class="password-hint">Must start with letter, min 3 characters, appropriate content only</div>
             </div>
             
             <div class="form-group">
@@ -184,6 +249,8 @@ if ($conn) {
                     name="email" 
                     value="<?php echo htmlspecialchars($email ?? ''); ?>" 
                     placeholder="your@email.com"
+                    pattern=".*@.*"
+                    title="Email must contain @ symbol"
                     required
                 >
             </div>
@@ -214,9 +281,15 @@ if ($conn) {
                     id="password" 
                     name="password" 
                     placeholder="Enter password"
+                    minlength="7"
                     required
                 >
-                <div class="password-hint">Minimum 6 characters</div>
+                <div class="validation-feedback" id="password-feedback">
+                    <div class="requirement" id="req-length">At least 7 characters</div>
+                    <div class="requirement" id="req-capital">One capital letter (A-Z)</div>
+                    <div class="requirement" id="req-number">One number (0-9)</div>
+                    <div class="requirement" id="req-special">One special character (!@#$%^&*...)</div>
+                </div>
             </div>
             
             <div class="form-group">
@@ -232,8 +305,140 @@ if ($conn) {
                 >
             </div>
             
-            <button type="submit" class="btn">Register Now</button>
+            <button type="submit" class="btn" id="submit-btn">Register Now</button>
         </form>
     </div>
+    
+    <script>
+        const form = document.querySelector('form');
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        const submitBtn = document.getElementById('submit-btn');
+        const username = document.getElementById('username');
+        const email = document.getElementById('email');
+        const fullname = document.getElementById('fullname');
+        
+        // Password validation requirements
+        const requirements = {
+            length: { regex: /.{7,}/, element: document.getElementById('req-length') },
+            capital: { regex: /[A-Z]/, element: document.getElementById('req-capital') },
+            number: { regex: /[0-9]/, element: document.getElementById('req-number') },
+            special: { regex: /[!@#$%^&*(),.?":{}|<>]/, element: document.getElementById('req-special') }
+        };
+        
+        // Check password requirements
+        function checkPassword() {
+            const value = password.value;
+            let allValid = true;
+            
+            for (let key in requirements) {
+                if (requirements[key].regex.test(value)) {
+                    requirements[key].element.classList.add('valid');
+                } else {
+                    requirements[key].element.classList.remove('valid');
+                    allValid = false;
+                }
+            }
+            
+            if (value.length > 0) {
+                password.classList.toggle('valid', allValid);
+                password.classList.toggle('invalid', !allValid);
+            } else {
+                password.classList.remove('valid', 'invalid');
+            }
+            
+            return allValid;
+        }
+        
+        // Check if passwords match
+        function checkPasswordMatch() {
+            if (confirmPassword.value.length > 0) {
+                const match = password.value === confirmPassword.value;
+                confirmPassword.classList.toggle('valid', match);
+                confirmPassword.classList.toggle('invalid', !match);
+                return match;
+            }
+            confirmPassword.classList.remove('valid', 'invalid');
+            return false;
+        }
+        
+        // Validate username
+        function checkUsername() {
+            const value = username.value;
+            const inappropriateWords = /(fuck|shit|ass|damn|bitch|bastard|crap|piss|dick|cock|pussy|slut|whore|nigger|fag|sex|porn|xxx)/i;
+            const valid = value.length >= 3 && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(value) && !inappropriateWords.test(value);
+            
+            if (value.length > 0) {
+                username.classList.toggle('valid', valid);
+                username.classList.toggle('invalid', !valid);
+            } else {
+                username.classList.remove('valid', 'invalid');
+            }
+            return valid;
+        }
+        
+        // Validate email
+        function checkEmail() {
+            const value = email.value;
+            const valid = value.includes('@') && value.length > 0;
+            
+            if (value.length > 0) {
+                email.classList.toggle('valid', valid);
+                email.classList.toggle('invalid', !valid);
+            } else {
+                email.classList.remove('valid', 'invalid');
+            }
+            return valid;
+        }
+        
+        // Validate full name
+        function checkFullname() {
+            const value = fullname.value;
+            const valid = value.length >= 3 && /^[a-zA-Z\s]+$/.test(value);
+            
+            if (value.length > 0) {
+                fullname.classList.toggle('valid', valid);
+                fullname.classList.toggle('invalid', !valid);
+            } else {
+                fullname.classList.remove('valid', 'invalid');
+            }
+            return valid;
+        }
+        
+        // Validate entire form
+        function validateForm() {
+            const passwordValid = checkPassword();
+            const passwordMatch = checkPasswordMatch();
+            const usernameValid = checkUsername();
+            const emailValid = checkEmail();
+            const fullnameValid = checkFullname();
+            const phoneValid = document.getElementById('phone').value.length === 8;
+            
+            const formValid = passwordValid && passwordMatch && usernameValid && emailValid && fullnameValid && phoneValid;
+            
+            submitBtn.disabled = !formValid;
+            return formValid;
+        }
+        
+        // Event listeners
+        password.addEventListener('input', validateForm);
+        confirmPassword.addEventListener('input', validateForm);
+        username.addEventListener('input', validateForm);
+        email.addEventListener('input', validateForm);
+        fullname.addEventListener('input', validateForm);
+        document.getElementById('phone').addEventListener('input', validateForm);
+        
+        // Prevent form submission if invalid
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                alert('Please fill in all required fields correctly before submitting.');
+                return false;
+            }
+        });
+        
+        // Initial validation
+        validateForm();
+    </script>
 </body>
 </html>
